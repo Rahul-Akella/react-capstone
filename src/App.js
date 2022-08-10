@@ -1,6 +1,5 @@
 import React from "react";
 import { Input, Button, Form, Carousel, Rate, notification } from "antd";
-import enUS from "antd/lib/locale-provider/en_US";
 import "./App.css";
 
 const contentStyle = {
@@ -10,25 +9,69 @@ const contentStyle = {
   textAlign: "center",
 };
 
-function App() {
-  const onChange = (currentSlide) => {
-    console.log(currentSlide);
-  };
+type NotificationType = "success" | "info" | "warning" | "error";
 
+const openNotificationWithIcon = (type: NotificationType) => {
+  notification[type]({
+    message: "Table Reserved",
+    description:
+      "Your Table has been Successfully Reserved under your name, Please check back with the restaurant.",
+  });
+};
+
+const openNotificationWithIconErr = (type: NotificationType) => {
+  notification[type]({
+    message: "Table Reservation Failed",
+    description:
+      "Your Table Reservation Failed, Please check back with the restaurant.",
+  });
+};
+
+function App() {
   const onFinish = (values) => {
-    console.log("Success:", values);
     const addObj = {
       firstName: values.firstName ? values.firstName : "",
       lastName: values.lastName ? values.lastName : "",
       phone: values.phone ? values.phone : "",
       email: values.email ? values.email : "",
     };
-    console.log("addObj", addObj);
+    //console.log("addObj", addObj);
+    fetch("https://table-service.herokuapp.com/tables/create", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(
+        addObj.firstName &&
+          addObj.lastName &&
+          addObj.phone &&
+          addObj.email == ""
+          ? []
+          : addObj
+      ),
+    })
+      .then((response) => {
+        if (
+          response.status === 200 ||
+          response.status === 201 ||
+          response.status === 204 ||
+          response.status === 304
+        ) {
+          openNotificationWithIcon("success");
+        } else {
+          console.log("error");
+        }
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   };
 
   const onFinishFailed = (errorInfo) => {
     console.log("Failed:", errorInfo);
   };
+
   return (
     <div className="App">
       <div class="wrapper">
@@ -276,7 +319,7 @@ function App() {
                 <div class="mini-reservation-container">
                   <div class="mini-reservation-content">
                     <h1 class="large">Reviews</h1>
-                    <Carousel afterChange={onChange}>
+                    <Carousel autoplay>
                       <div>
                         <h3 style={contentStyle}>
                           <p class="tagLine">CHICAGO MAGAZINE</p>
@@ -401,7 +444,11 @@ function App() {
                         offset: 9,
                       }}
                     >
-                      <Button type="primary" htmlType="submit">
+                      <Button
+                        onClick={onFinish}
+                        type="primary"
+                        htmlType="submit"
+                      >
                         Reserve Table
                       </Button>
                     </Form.Item>
